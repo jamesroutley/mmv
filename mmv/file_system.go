@@ -1,9 +1,7 @@
 package mmv
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 )
 
@@ -28,15 +26,4 @@ func cleanPaths(paths []string) []string {
 		clean[i] = filepath.Clean(path)
 	}
 	return clean
-}
-
-func rename(old, new string, dryrun bool) error {
-	if old == new {
-		return nil
-	}
-	if dryrun {
-		fmt.Printf("mv %s %s\n", old, new)
-		return nil
-	}
-	return os.Rename(old, new)
 }

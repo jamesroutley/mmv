@@ -1,8 +1,15 @@
 package mmv
 
 import (
-	"fmt"
 	"os"
+
+	"golang.org/x/xerrors"
+)
+
+var (
+	ErrNotDirectory = xerrors.New("is not a directory")
+	ErrCannotCreate = xerrors.New("there are more new paths than old. mmv can't create files or directories")
+	ErrCannotDelete = xerrors.New("there are more new paths than old. mmv can't delete files or directories")
 )
 
 func validateIsDir(path string) error {
@@ -11,20 +18,19 @@ func validateIsDir(path string) error {
 		return err
 	}
 	if !fileInfo.IsDir() {
-		return fmt.Errorf("%s is not a directory", path)
+		return xerrors.Errorf("%s: %w", path, ErrNotDirectory)
 	}
 	return nil
 }
 
 func validateNewPaths(old, new []string) error {
 	if len(new) > len(old) {
-		return fmt.Errorf("There are more new paths than old. mmv can't create files or directories")
+		return ErrCannotCreate
 	}
 	if len(old) > len(new) {
-		return fmt.Errorf("There are more new paths than old. mmv can't delete files or directories")
+		return ErrCannotDelete
 	}
 	// TODO
-	//	- Check number of files is the same
 	//	- Check all directories exist
 	return nil
 }

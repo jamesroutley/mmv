@@ -18,18 +18,32 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 )
 
-func MultiMoveDir(path string) error {
+type MultiMover struct {
+	editor FileEditor
+	dryRun bool
+}
+
+func NewMultiMover(options ...func(*MultiMover)) *MultiMover {
+	mover := &MultiMover{
+		editor: &DefaultEditor{},
+	}
+	for _, option := range options {
+		option(mover)
+	}
+	return mover
+}
+
+func (mm *MultiMover) MultiMoveDir(path string) error {
 	paths, err := pathsInDir(path)
 	if err != nil {
 		return err
 	}
 
-	newPaths, err := multiEdit(paths)
+	newPaths, err := multiEdit(paths, mm.editor)
 	if err != nil {
 		return err
 	}
@@ -44,7 +58,7 @@ func MultiMoveDir(path string) error {
 	for i, oldPath := range paths {
 		oldPath = filepath.Join(path, oldPath)
 		newPath := filepath.Join(path, newPaths[i])
-		if err := rename(oldPath, newPath, true); err != nil {
+		if err := mm.rename(oldPath, newPath); err != nil {
 			return err
 		}
 	}
@@ -52,10 +66,21 @@ func MultiMoveDir(path string) error {
 	return nil
 }
 
-// BatchEdit takes a string slice, puts each string on a new line in a file,
+func (mm *MultiMover) rename(old, new string) error {
+	if old == new {
+		return nil
+	}
+	if mm.dryRun {
+		fmt.Printf("mv %s %s\n", old, new)
+		return nil
+	}
+	return os.Rename(old, new)
+}
+
+// multiEdit takes a string slice, puts each string on a new line in a file,
 // opens an editor, prompts the user to edit them, then returns the edited
 // strings
-func multiEdit(items []string) ([]string, error) {
+func multiEdit(items []string, editor FileEditor) ([]string, error) {
 	// Create a temporary file and write the items to it
 	f, err := ioutil.TempFile(os.TempDir(), "")
 	if err != nil {
@@ -67,7 +92,7 @@ func multiEdit(items []string) ([]string, error) {
 	}
 
 	// Open edit the in a text editor
-	if err := editFile(f.Name()); err != nil {
+	if err := editor.Edit(f.Name()); err != nil {
 		return nil, err
 	}
 
@@ -77,23 +102,4 @@ func multiEdit(items []string) ([]string, error) {
 	// Remove any trailing newlines - some editors insert them
 	s = strings.TrimSpace(s)
 	return strings.Split(s, "\n"), nil
-}
-
-// editFile opens the file pointed to by `filename` in the user's chosen editor
-func editFile(filename string) error {
-	editor := os.Getenv("VISUAL")
-	if editor == "" {
-		editor = os.Getenv("EDITOR")
-	}
-	if editor == "" {
-		editor = "vim"
-	}
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("%s %s", editor, filename))
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
-		return err
-	}
-	return nil
 }
