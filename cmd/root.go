@@ -16,7 +16,6 @@ package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/jamesroutley/mmv/mmv"
@@ -40,7 +39,8 @@ var rootCmd = &cobra.Command{
 		}
 		mover := mmv.NewMultiMover(options...)
 		if err := mover.MultiMoveDir(args[0]); err != nil {
-			log.Fatal(err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
 	},
 }
