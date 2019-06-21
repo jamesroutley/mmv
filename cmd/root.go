@@ -33,7 +33,7 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "mmv [directory]",
 	Short: "multi move files",
-	Long:  `mmv lets you rename multiple files in a directory at once, by editing their names in your favourite text editor`,
+	Long:  `mmv lets you rename multiple files at once, by editing their paths in your text editor`,
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		var options []func(*mmv.MultiMover)

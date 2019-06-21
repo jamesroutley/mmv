@@ -7,7 +7,17 @@ mmv lets you move or rename one or more files at once, by editing their paths in
 ## API
 
 ```sh
-$ mmv [directory]
+$ mmv -h
+mmv lets you rename multiple files at once, by editing their paths in your text editor
+
+Usage:
+  mmv [directory] [flags]
+
+Flags:
+      --dry-run           Print out the the changes without actually making them
+      --excludes string   Exclude files which match this regular expression
+  -h, --help              help for mmv
+      --includes string   Only include files which match this regular expression
 ```
 
 ## Example
