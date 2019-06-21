@@ -19,12 +19,15 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 type MultiMover struct {
-	editor FileEditor
-	dryRun bool
+	editor   FileEditor
+	dryRun   bool
+	includes *regexp.Regexp
+	excludes *regexp.Regexp
 }
 
 func NewMultiMover(options ...func(*MultiMover)) *MultiMover {
@@ -42,6 +45,19 @@ func (mm *MultiMover) MultiMoveDir(path string) error {
 	if err != nil {
 		return err
 	}
+
+	paths = filterStringSlice(paths, func(s string) bool {
+		if mm.includes == nil {
+			return true
+		}
+		return mm.includes.MatchString(s)
+	})
+	paths = filterStringSlice(paths, func(s string) bool {
+		if mm.excludes == nil {
+			return true
+		}
+		return !mm.excludes.MatchString(s)
+	})
 
 	newPaths, err := multiEdit(paths, mm.editor)
 	if err != nil {
@@ -102,4 +118,14 @@ func multiEdit(items []string, editor FileEditor) ([]string, error) {
 	// Remove any trailing newlines - some editors insert them
 	s = strings.TrimSpace(s)
 	return strings.Split(s, "\n"), nil
+}
+
+func filterStringSlice(ss []string, include func(string) bool) []string {
+	var filtered []string
+	for _, s := range ss {
+		if include(s) {
+			filtered = append(filtered, s)
+		}
+	}
+	return filtered
 }
